@@ -9,8 +9,9 @@ load_dotenv()
 
 # ==== スマートメーター設定 ====
 rbid = os.getenv("RBID")
-pwd = os.getenv("PWD")
+pwd = os.getenv("B_ROUTE_PWD")
 dev = os.getenv("DEVICE")
+
 
 # ==== InfluxDB設定 ====
 INFLUX_URL = os.getenv("INFLUX_URL")
