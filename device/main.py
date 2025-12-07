@@ -49,7 +49,7 @@ def main():
                 )
 
                 # 30〜60秒くらいがオススメ
-                time.sleep(5)
+                time.sleep(10)
 
             except Exception as e:
                 print("エラーが発生しました:", e)

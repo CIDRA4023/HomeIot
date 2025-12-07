@@ -1,0 +1,46 @@
+services:
+  app:
+    build:
+      context: ./app
+    env_file:
+      - .env
+    environment:
+      INFLUX_URL: ${INFLUX_URL:-http://influxdb:8086}
+    depends_on:
+      influxdb:
+        condition: service_healthy
+      mqtt:
+        condition: service_started
+    ports:
+      - "${APP_PORT:-8000}:8000"
+
+  influxdb:
+    image: influxdb:2.7
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "8086:8086"
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+      - influxdb-config:/etc/influxdb2
+    healthcheck:
+      test: ["CMD", "influx", "ping", "--host", "http://localhost:8086"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mqtt:
+    image: eclipse-mosquitto:2.0
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+    volumes:
+      - mosquitto-data:/mosquitto/data
+      - mosquitto-config:/mosquitto/config
+
+volumes:
+  influxdb-data:
+  influxdb-config:
+  mosquitto-data:
+  mosquitto-config:

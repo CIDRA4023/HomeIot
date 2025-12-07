@@ -1,8 +1,7 @@
 [project]
-name = "homeiot"
+name = "home-iot-device"
 version = "0.1.0"
-description = "Add your description here"
-readme = "README.md"
+description = "Raspberry Pi side scripts for the Home IoT project"
 requires-python = ">=3.13"
 dependencies = [
     "influxdb-client>=1.49.0",
