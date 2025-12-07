@@ -9,7 +9,7 @@ WORKDIR /app
 COPY pyproject.toml /app/
 
 RUN pip install --no-cache-dir uv==0.9.16 \
-    && uv sync --all
+    && uv sync
 
 COPY app.py /app/
 
