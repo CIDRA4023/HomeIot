@@ -8,4 +8,5 @@ dependencies = [
     "momonga>=0.2.0",
     "python-dotenv>=1.2.1",
     "ruff>=0.14.7",
+    "paho-mqtt>=2.1.0",
 ]

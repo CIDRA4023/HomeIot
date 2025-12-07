@@ -9,7 +9,8 @@ COPY app.py /app/
 
 RUN pip install --no-cache-dir fastapi==0.115.6 \
     uvicorn[standard]==0.32.1 \
-    influxdb-client==1.49.0
+    influxdb-client==1.49.0 \
+    paho-mqtt==2.1.0
 
 EXPOSE 8000
 

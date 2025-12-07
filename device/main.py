@@ -1,9 +1,13 @@
 import time
 import momonga
-from influxdb_client import InfluxDBClient, Point, WriteOptions
+import json
+import os
+from urllib.parse import urlparse
+
+import paho.mqtt.client as mqtt
+from influxdb_client import InfluxDBClient, Point
 from influxdb_client.client.write_api import SYNCHRONOUS
 from dotenv import load_dotenv
-import os
 
 load_dotenv()
 
@@ -12,23 +16,65 @@ rbid = os.getenv("RBID")
 pwd = os.getenv("B_ROUTE_PWD")
 dev = os.getenv("DEVICE")
 
+# ==== MQTT設定 ====
+MQTT_BROKER_URL = os.getenv("MQTT_BROKER_URL")
+MQTT_TOPIC = os.getenv("MQTT_TOPIC", "home/power")
 
-# ==== InfluxDB設定 ====
+
+# ==== InfluxDB設定（デフォルトで直接書き込みは無効） ====
+ENABLE_DIRECT_INFLUX = os.getenv("ENABLE_DIRECT_INFLUX", "false").lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
 INFLUX_URL = os.getenv("INFLUX_URL")
 INFLUX_TOKEN = os.getenv("INFLUX_TOKEN")
 INFLUX_ORG = os.getenv("INFLUX_ORG")
 INFLUX_BUCKET = os.getenv("INFLUX_BUCKET")
 
-# ==== InfluxDBクライアント ====
-client = InfluxDBClient(
-    url=INFLUX_URL,
-    token=INFLUX_TOKEN,
-    org=INFLUX_ORG,
-)
-write_api = client.write_api(write_options=SYNCHRONOUS)
+write_api = None
+if ENABLE_DIRECT_INFLUX:
+    if not all([INFLUX_URL, INFLUX_TOKEN, INFLUX_ORG, INFLUX_BUCKET]):
+        print("ENABLE_DIRECT_INFLUX=true ですが InfluxDB 設定が不足しているためスキップします。")
+    else:
+        client = InfluxDBClient(
+            url=INFLUX_URL,
+            token=INFLUX_TOKEN,
+            org=INFLUX_ORG,
+        )
+        write_api = client.write_api(write_options=SYNCHRONOUS)
+
+
+def build_mqtt_client() -> mqtt.Client | None:
+    """環境変数が揃っていれば MQTT クライアントを組み立てて接続する。"""
+
+    if not MQTT_BROKER_URL:
+        print("MQTT_BROKER_URL が未設定のため MQTT 送信をスキップします。")
+        return None
+
+    parsed = urlparse(MQTT_BROKER_URL)
+    if not parsed.hostname:
+        print(f"MQTT_BROKER_URL のホストが不正です: {MQTT_BROKER_URL}")
+        return None
+
+    host = parsed.hostname
+    port = parsed.port or 1883
+
+    client = mqtt.Client(protocol=mqtt.MQTTv5)
+
+    if parsed.username or parsed.password:
+        client.username_pw_set(parsed.username, parsed.password or None)
+
+    client.connect(host, port)
+    client.loop_start()
+    print(f"MQTT 接続に成功: {host}:{port} トピック {MQTT_TOPIC}")
+    return client
 
 
 def main():
+    mqtt_client = build_mqtt_client()
+
     # momongaでスマートメーターに接続
     with momonga.Momonga(rbid, pwd, dev) as mo:
         while True:
@@ -42,11 +88,19 @@ def main():
                     .field("power_w", float(power))  # フィールド名
                 )
 
-                write_api.write(
-                    bucket=INFLUX_BUCKET,
-                    org=INFLUX_ORG,
-                    record=point,
-                )
+                if write_api:
+                    write_api.write(
+                        bucket=INFLUX_BUCKET,
+                        org=INFLUX_ORG,
+                        record=point,
+                    )
+
+                if mqtt_client:
+                    payload = {
+                        "meter": "home",
+                        "power_w": float(power),
+                    }
+                    mqtt_client.publish(MQTT_TOPIC, json.dumps(payload), qos=1)
 
                 # 30〜60秒くらいがオススメ
                 time.sleep(10)
