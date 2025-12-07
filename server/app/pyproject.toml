@@ -1,0 +1,11 @@
+[project]
+name = "home-iot-server"
+version = "0.2.0"
+description = "VPS 向け API コンテナ"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi==0.115.6",
+    "uvicorn[standard]==0.32.1",
+    "influxdb-client==1.49.0",
+    "paho-mqtt==2.1.0",
+]
