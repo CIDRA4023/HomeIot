@@ -5,8 +5,6 @@ import os
 from urllib.parse import urlparse
 
 import paho.mqtt.client as mqtt
-from influxdb_client import InfluxDBClient, Point
-from influxdb_client.client.write_api import SYNCHRONOUS
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -19,32 +17,6 @@ dev = os.getenv("DEVICE")
 # ==== MQTT設定 ====
 MQTT_BROKER_URL = os.getenv("MQTT_BROKER_URL")
 MQTT_TOPIC = os.getenv("MQTT_TOPIC", "home/power")
-
-
-# ==== InfluxDB設定（デフォルトで直接書き込みは無効） ====
-ENABLE_DIRECT_INFLUX = os.getenv("ENABLE_DIRECT_INFLUX", "false").lower() in {
-    "1",
-    "true",
-    "yes",
-    "on",
-}
-INFLUX_URL = os.getenv("INFLUX_URL")
-INFLUX_TOKEN = os.getenv("INFLUX_TOKEN")
-INFLUX_ORG = os.getenv("INFLUX_ORG")
-INFLUX_BUCKET = os.getenv("INFLUX_BUCKET")
-
-write_api = None
-if ENABLE_DIRECT_INFLUX:
-    if not all([INFLUX_URL, INFLUX_TOKEN, INFLUX_ORG, INFLUX_BUCKET]):
-        print("ENABLE_DIRECT_INFLUX=true ですが InfluxDB 設定が不足しているためスキップします。")
-    else:
-        client = InfluxDBClient(
-            url=INFLUX_URL,
-            token=INFLUX_TOKEN,
-            org=INFLUX_ORG,
-        )
-        write_api = client.write_api(write_options=SYNCHRONOUS)
-
 
 def build_mqtt_client() -> mqtt.Client | None:
     """環境変数が揃っていれば MQTT クライアントを組み立てて接続する。"""
@@ -81,19 +53,6 @@ def main():
             try:
                 power = mo.get_instantaneous_power()  # W
                 print(f"現在の瞬時電力: {power:.1f} W")
-
-                point = (
-                    Point("tepco_power")  # 測定名（measurement）
-                    .tag("meter", "home")  # 複数メーター対応するならタグで切り分け
-                    .field("power_w", float(power))  # フィールド名
-                )
-
-                if write_api:
-                    write_api.write(
-                        bucket=INFLUX_BUCKET,
-                        org=INFLUX_ORG,
-                        record=point,
-                    )
 
                 if mqtt_client:
                     payload = {
