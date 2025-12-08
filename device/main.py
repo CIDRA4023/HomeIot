@@ -53,11 +53,21 @@ def main():
             try:
                 power = mo.get_instantaneous_power()  # W
                 print(f"現在の瞬時電力: {power:.1f} W")
+                # 積算電力量（買電/売電）を取得。取得できなくても計測は継続する。
+                energy_import = None
+                energy_export = None
+                try:
+                    energy_import = mo.get_measured_cumulative_energy(reverse=False)
+                    energy_export = mo.get_measured_cumulative_energy(reverse=True)
+                except Exception as e:
+                    print(f"積算電力量の取得に失敗しました: {e}")
 
                 if mqtt_client:
                     payload = {
                         "meter": "home",
                         "power_w": float(power),
+                        "energy_wh_import": energy_import,
+                        "energy_wh_export": energy_export,
                     }
                     mqtt_client.publish(MQTT_TOPIC, json.dumps(payload), qos=1)
 
