@@ -57,11 +57,13 @@ def _build_mqtt_client() -> mqtt.Client | None:
     port = parsed.port or 1883
 
     mqtt_client = mqtt.Client(protocol=mqtt.MQTTv5)
+    mqtt_client.reconnect_delay_set(min_delay=1, max_delay=30)
     if parsed.username or parsed.password:
         mqtt_client.username_pw_set(parsed.username, parsed.password or None)
 
     def on_connect(client: mqtt.Client, userdata, flags, reason_code, properties=None):
-        if reason_code != mqtt.ReasonCodes.SUCCESS:
+        code = getattr(reason_code, "value", reason_code)
+        if code not in (0, mqtt.MQTT_ERR_SUCCESS):
             print(f"MQTT 接続に失敗: {reason_code}")
             return
         client.subscribe(MQTT_TOPIC, qos=1)
@@ -79,8 +81,12 @@ def _build_mqtt_client() -> mqtt.Client | None:
     mqtt_client.on_connect = on_connect
     mqtt_client.on_message = on_message
 
-    mqtt_client.connect(host, port)
-    mqtt_client.loop_start()
+    try:
+        mqtt_client.connect_async(host, port)
+        mqtt_client.loop_start()
+    except Exception as exc:
+        print(f"MQTT 接続開始に失敗しました: {exc}")
+        return None
     return mqtt_client
 
 

@@ -38,6 +38,7 @@ services:
     volumes:
       - mosquitto-data:/mosquitto/data
       - mosquitto-config:/mosquitto/config
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
 
 volumes:
   influxdb-data:
