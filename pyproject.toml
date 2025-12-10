@@ -1,0 +1,25 @@
+[project]
+name = "homeiot-monorepo"
+version = "0.1.0"
+requires-python = ">=3.12"
+description = "Home IoT energy monitoring monorepo"
+dependencies = []
+
+[tool.uv]
+required-version = ">=0.4"
+
+[tool.uv.workspace]
+members = [
+  "device/raspi-zero2",
+  "server/mqtt_gateway",
+  # 後で "server/batch" も足す予定
+]
+
+[dependency-groups]
+dev = [
+  "ruff",
+  "ty",
+  "pytest",
+  "pre-commit",
+  "import-linter",
+]

@@ -1,7 +1,7 @@
 services:
   app:
     build:
-      context: ./app
+      context: ./server/mqtt_gateway
     env_file:
       - .env
     environment:
@@ -36,9 +36,7 @@ services:
     ports:
       - "1883:1883"
     volumes:
-      - mosquitto-data:/mosquitto/data
-      - mosquitto-config:/mosquitto/config
-      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+    - ./server/config/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
 
 volumes:
   influxdb-data:
