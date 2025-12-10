@@ -1,0 +1,6 @@
+[tool.ty]
+python_version = "3.12"
+paths = [
+  "device",
+  "server",
+]

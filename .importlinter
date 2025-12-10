@@ -1,0 +1,11 @@
+[importlinter]
+root_package = .
+
+[contract:device_must_not_depend_on_server]
+name = Device must not depend on server code
+type = forbidden
+source_modules =
+    homeiot_device_raspi
+forbidden_modules =
+    homeiot_mqtt_gateway
+    homeiot_batch
