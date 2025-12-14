@@ -6,7 +6,15 @@ requires-python = ">=3.13"
 members = [
     "home-iot-device",
     "home-iot-server",
-    "homeiot-monorepo",
+]
+
+[manifest.dependency-groups]
+dev = [
+    { name = "import-linter" },
+    { name = "pre-commit" },
+    { name = "pytest" },
+    { name = "ruff" },
+    { name = "ty" },
 ]
 
 [[package]]
@@ -152,7 +160,7 @@ wheels = [
 [[package]]
 name = "home-iot-device"
 version = "0.1.0"
-source = { virtual = "device/raspi-zero2" }
+source = { editable = "device/raspi-zero2" }
 dependencies = [
     { name = "influxdb-client" },
     { name = "momonga" },
@@ -187,31 +195,6 @@ requires-dist = [
     { name = "influxdb-client", specifier = "==1.49.0" },
     { name = "paho-mqtt", specifier = "==2.1.0" },
     { name = "uvicorn", extras = ["standard"], specifier = "==0.32.1" },
-]
-
-[[package]]
-name = "homeiot-monorepo"
-version = "0.1.0"
-source = { virtual = "." }
-
-[package.dev-dependencies]
-dev = [
-    { name = "import-linter" },
-    { name = "pre-commit" },
-    { name = "pytest" },
-    { name = "ruff" },
-    { name = "ty" },
-]
-
-[package.metadata]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "import-linter" },
-    { name = "pre-commit" },
-    { name = "pytest" },
-    { name = "ruff" },
-    { name = "ty" },
 ]
 
 [[package]]

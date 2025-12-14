@@ -1,10 +1,3 @@
-[project]
-name = "homeiot-monorepo"
-version = "0.1.0"
-requires-python = ">=3.12"
-description = "Home IoT energy monitoring monorepo"
-dependencies = []
-
 [tool.uv]
 required-version = ">=0.4"
 
