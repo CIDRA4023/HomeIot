@@ -43,7 +43,7 @@ write_api: WriteApi = client.write_api(write_options=SYNCHRONOUS)
 
 def _write_to_influx(reading: PowerReading) -> None:
     point = (
-        Point("tepco_power")
+        Point("smartmeter_power")
         .tag("meter", reading.meter)
         .field("power_w", float(reading.power_w))
     )
@@ -104,7 +104,7 @@ mqtt_client = _build_mqtt_client()
 
 
 @app.get("/health", tags=["meta"])
-def health() -> dict[str, str]:
+def health() -> dict[str, str | bool]:
     """ヘルスチェック用の軽量エンドポイント。"""
 
     return {
