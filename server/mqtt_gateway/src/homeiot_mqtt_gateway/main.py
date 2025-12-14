@@ -29,9 +29,6 @@ class PowerReading(BaseModel):
     energy_wh_import: Optional[float] = Field(
         default=None, description="Cumulative imported energy in Wh"
     )
-    energy_wh_export: Optional[float] = Field(
-        default=None, description="Cumulative exported energy in Wh"
-    )
     measured_at: Optional[datetime] = Field(
         default=None, description="UTC timestamp supplied by the device"
     )
@@ -49,8 +46,6 @@ def _write_to_influx(reading: PowerReading) -> None:
     )
     if reading.energy_wh_import is not None:
         point.field("energy_wh_import", float(reading.energy_wh_import))
-    if reading.energy_wh_export is not None:
-        point.field("energy_wh_export", float(reading.energy_wh_export))
     if reading.measured_at:
         point.time(reading.measured_at)
 
