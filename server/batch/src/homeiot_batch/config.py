@@ -56,6 +56,7 @@ class Config:
             if "PARQUET_ROW_GROUP_SIZE" in os.environ
             else None,
             tz=os.environ.get("TZ", "Asia/Tokyo"),
-            measurement=os.environ.get("INFLUX_MEASUREMENT") or os.environ.get("MEASUREMENT", "power"),
+            measurement=os.environ.get("INFLUX_MEASUREMENT")
+            or os.environ.get("MEASUREMENT", "smartmeter_power"),
             source_default=os.environ.get("SOURCE_DEFAULT", "meter1"),
         )
