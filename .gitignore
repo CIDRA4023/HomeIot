@@ -15,3 +15,11 @@ wheels/
 .env
 
 .ruff_cache/
+
+# uv caches and runtime data
+.uv_cache/
+**/.uv_cache/
+
+# Local volumes (DuckDB / Parquet)
+data/duckdb/
+data/parquet/
