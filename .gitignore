@@ -23,3 +23,6 @@ wheels/
 # Local volumes (DuckDB / Parquet)
 data/duckdb/
 data/parquet/
+
+# Grafana unsigned plugin binaries (置き場だけリポジトリ外管理)
+server/grafana/plugins/

@@ -1,0 +1,67 @@
+{
+  "title": "Home Energy - Realtime",
+  "timezone": "browser",
+  "refresh": "30s",
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Instant Power (W)",
+      "datasource": {
+        "type": "influxdb",
+        "uid": null,
+        "name": "InfluxDB"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "query": "SELECT mean(\"instant_power_w\") FROM \"power\" WHERE $timeFilter GROUP BY time($__interval), \"source\" fill(null)",
+          "queryType": "influxql"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "watt"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Energy Import (kWh)",
+      "datasource": {
+        "type": "influxdb",
+        "uid": null,
+        "name": "InfluxDB"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "query": "SELECT last(\"energy_import_kwh\") FROM \"power\" WHERE $timeFilter GROUP BY time($__interval), \"source\" fill(null)",
+          "queryType": "influxql"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "kWh"
+        },
+        "overrides": []
+      }
+    }
+  ],
+  "schemaVersion": 38,
+  "version": 1
+}

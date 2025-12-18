@@ -50,8 +50,32 @@ services:
     volumes:
     - ./server/config/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
 
+  grafana:
+    image: grafana/grafana:latest-ubuntu
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - TZ=${TZ:-Asia/Tokyo}
+      - GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=motherduck-duckdb-datasource
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./server/grafana/provisioning:/etc/grafana/provisioning
+      - ./server/grafana/dashboards:/var/lib/grafana/dashboards
+      - ./server/grafana/plugins/motherduck-duckdb-datasource:/var/lib/grafana/plugins/motherduck-duckdb-datasource
+      - ./data/duckdb:/data/duckdb:ro
+      - ./data/parquet:/data/parquet:ro
+
 volumes:
   influxdb-data:
   influxdb-config:
   mosquitto-data:
   mosquitto-config:
+  grafana-data:

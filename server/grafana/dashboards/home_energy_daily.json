@@ -1,0 +1,58 @@
+{
+  "title": "Home Energy - Daily",
+  "timezone": "browser",
+  "panels": [
+    {
+      "id": 1,
+      "type": "barchart",
+      "title": "Daily Energy (kWh)",
+      "datasource": {
+        "type": "motherduck-duckdb-datasource",
+        "uid": null,
+        "name": "DuckDB"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "query": "SELECT CAST(ts_jst AS DATE) AS date_jst, MAX(energy_import_kwh) - MIN(energy_import_kwh) AS daily_energy_kwh\nFROM raw_meter_readings\nGROUP BY 1\nORDER BY 1"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "kWh"
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient"
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Peak W (Selected Range)",
+      "datasource": {
+        "type": "motherduck-duckdb-datasource",
+        "uid": null,
+        "name": "DuckDB"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "query": "SELECT MAX(instant_power_w) AS peak_w\nFROM raw_meter_readings\nWHERE ts_jst BETWEEN $__timeFrom() AND $__timeTo()"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "watt"
+        },
+        "overrides": []
+      }
+    }
+  ],
+  "schemaVersion": 38,
+  "version": 1
+}
