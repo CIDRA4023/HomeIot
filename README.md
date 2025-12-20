@@ -2,6 +2,34 @@
 
 Raspberry Pi と VPS の両方を 1 リポジトリで管理するための最小構成です。
 
+## アーキテクチャ
+
+```mermaid
+flowchart LR
+  subgraph Device
+    RPI[Raspberry Pi Zero2\nhomeiot_device_raspi]
+  end
+  subgraph Server
+    MQTT[MQTT Broker\nMosquitto]
+    GW[MQTT Gateway\nFastAPI]
+    Influx[InfluxDB\nhome_energy.power]
+    Batch[Batch Archive\nhomeiot_batch]
+    Parquet[Parquet\nraw_meter_readings/dt=YYYY-MM-DD]
+    DuckDB[DuckDB\nhome_energy.duckdb]
+    DBT[dbt Models]
+    Grafana[Grafana Dashboards]
+  end
+  RPI -- publish --> MQTT
+  MQTT -- subscribe --> GW
+  GW -- write --> Influx
+  Batch -- query (prev day JST) --> Influx
+  Batch -- write --> Parquet
+  Parquet -- load --> DuckDB
+  DBT -- build --> DuckDB
+  Grafana -- read --> Influx
+  Grafana -- read --> DuckDB
+```
+
 ```
 home-iot/
   README.md
