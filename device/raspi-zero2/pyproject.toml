@@ -4,11 +4,14 @@ version = "0.1.0"
 description = "Raspberry Pi side scripts for the Home IoT project"
 requires-python = ">=3.13"
 dependencies = [
-    "influxdb-client>=1.49.0",
     "momonga>=0.2.0",
     "python-dotenv>=1.2.1",
-    "ruff>=0.14.7",
     "paho-mqtt>=2.1.0",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14.7",
 ]
 
 [build-system]

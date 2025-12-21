@@ -162,21 +162,25 @@ name = "home-iot-device"
 version = "0.1.0"
 source = { editable = "device/raspi-zero2" }
 dependencies = [
-    { name = "influxdb-client" },
     { name = "momonga" },
     { name = "paho-mqtt" },
     { name = "python-dotenv" },
+]
+
+[package.dev-dependencies]
+dev = [
     { name = "ruff" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "influxdb-client", specifier = ">=1.49.0" },
     { name = "momonga", specifier = ">=0.2.0" },
     { name = "paho-mqtt", specifier = ">=2.1.0" },
     { name = "python-dotenv", specifier = ">=1.2.1" },
-    { name = "ruff", specifier = ">=0.14.7" },
 ]
+
+[package.metadata.requires-dev]
+dev = [{ name = "ruff", specifier = ">=0.14.7" }]
 
 [[package]]
 name = "home-iot-server"
