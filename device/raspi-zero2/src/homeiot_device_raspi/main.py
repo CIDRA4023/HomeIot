@@ -50,16 +50,30 @@ def build_mqtt_client() -> mqtt.Client | None:
     host = parsed.hostname
     port = parsed.port or 1883
 
-    client = mqtt.Client(protocol=mqtt.MQTTv5)
+    client = mqtt.Client(
+        protocol=mqtt.MQTTv5,
+        callback_api_version=mqtt.CallbackAPIVersion.VERSION2,
+    )
+
+    def to_reason_code(reason_code: object) -> int:
+        if hasattr(reason_code, "value"):
+            try:
+                return int(getattr(reason_code, "value"))
+            except (TypeError, ValueError):
+                return -1
+        try:
+            return int(reason_code)
+        except (TypeError, ValueError):
+            return -1
 
     def on_connect(
         _client: mqtt.Client,
         _userdata: object,
         _flags: object,
-        reason_code: int,
+        reason_code: object,
         _properties: object | None,
     ) -> None:
-        code = int(reason_code)
+        code = to_reason_code(reason_code)
         if code == 0:
             print(f"MQTT 接続に成功: {host}:{port} トピック {MQTT_TOPIC}")
         else:
@@ -68,10 +82,10 @@ def build_mqtt_client() -> mqtt.Client | None:
     def on_disconnect(
         _client: mqtt.Client,
         _userdata: object,
-        reason_code: int,
+        reason_code: object,
         _properties: object | None,
     ) -> None:
-        code = int(reason_code)
+        code = to_reason_code(reason_code)
         if code != 0:
             print(f"MQTT 切断を検知しました: reason={code} (再接続を試行します)")
         else:
