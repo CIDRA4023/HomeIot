@@ -1,13 +1,19 @@
-import time
-import momonga
 import json
+import logging
 import os
+import time
 from urllib.parse import urlparse
 
+import momonga
 import paho.mqtt.client as mqtt
 from dotenv import load_dotenv
 
 load_dotenv()
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
+logger = logging.getLogger("homeiot_device_raspi")
 
 # ==== スマートメーター設定 ====
 rbid = os.getenv("RBID")
@@ -30,6 +36,7 @@ def validate_required_env() -> None:
 
     if missing:
         missing_str = ", ".join(missing)
+        logger.error("必須環境変数が未設定です: %s", missing_str)
         raise SystemExit(
             f"必須環境変数が未設定です: {missing_str} (.env を確認してください)"
         )
@@ -39,12 +46,12 @@ def build_mqtt_client() -> mqtt.Client | None:
     """環境変数が揃っていれば MQTT クライアントを組み立てて接続する。"""
 
     if not MQTT_BROKER_URL:
-        print("MQTT_BROKER_URL が未設定のため MQTT 送信をスキップします。")
+        logger.warning("MQTT_BROKER_URL が未設定のため MQTT 送信をスキップします。")
         return None
 
     parsed = urlparse(MQTT_BROKER_URL)
     if not parsed.hostname:
-        print(f"MQTT_BROKER_URL のホストが不正です: {MQTT_BROKER_URL}")
+        logger.error("MQTT_BROKER_URL のホストが不正です: %s", MQTT_BROKER_URL)
         return None
 
     host = parsed.hostname
@@ -75,9 +82,9 @@ def build_mqtt_client() -> mqtt.Client | None:
     ) -> None:
         code = to_reason_code(reason_code)
         if code == 0:
-            print(f"MQTT 接続に成功: {host}:{port} トピック {MQTT_TOPIC}")
+            logger.info("MQTT 接続に成功: %s:%s トピック %s", host, port, MQTT_TOPIC)
         else:
-            print(f"MQTT 接続に失敗しました: reason={code}")
+            logger.error("MQTT 接続に失敗しました: reason=%s", code)
 
     def on_disconnect(
         _client: mqtt.Client,
@@ -87,9 +94,11 @@ def build_mqtt_client() -> mqtt.Client | None:
     ) -> None:
         code = to_reason_code(reason_code)
         if code != 0:
-            print(f"MQTT 切断を検知しました: reason={code} (再接続を試行します)")
+            logger.warning(
+                "MQTT 切断を検知しました: reason=%s (再接続を試行します)", code
+            )
         else:
-            print("MQTT 接続を終了しました。")
+            logger.info("MQTT 接続を終了しました。")
 
     if parsed.username or parsed.password:
         client.username_pw_set(parsed.username, parsed.password or None)
@@ -113,13 +122,15 @@ def main():
             while True:
                 try:
                     power = mo.get_instantaneous_power()  # W
-                    print(f"現在の瞬時電力: {power:.1f} W")
+                    logger.info("現在の瞬時電力: %.1f W", power)
                     # 積算電力量（買電）のみ取得。取得できなくても計測は継続する。
                     energy_import = None
                     try:
                         energy_import = mo.get_measured_cumulative_energy(reverse=False)
                     except Exception as e:
-                        print(f"積算電力量の取得に失敗しました: {e}")
+                        logger.warning(
+                            "積算電力量の取得に失敗しました: %s", e, exc_info=True
+                        )
 
                     if mqtt_client:
                         payload = {
@@ -133,11 +144,11 @@ def main():
                     time.sleep(10)
 
                 except Exception as e:
-                    print("エラーが発生しました:", e)
+                    logger.exception("エラーが発生しました: %s", e)
                     # 少し待って再トライ
                     time.sleep(10)
     except KeyboardInterrupt:
-        print("終了要求を受け取りました。")
+        logger.info("終了要求を受け取りました。")
     finally:
         if mqtt_client:
             mqtt_client.disconnect()
