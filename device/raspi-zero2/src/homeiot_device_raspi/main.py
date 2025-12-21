@@ -18,6 +18,22 @@ dev = os.getenv("DEVICE")
 MQTT_BROKER_URL = os.getenv("MQTT_BROKER_URL")
 MQTT_TOPIC = os.getenv("MQTT_TOPIC", "home/power")
 
+
+def validate_required_env() -> None:
+    missing = []
+    if not rbid:
+        missing.append("RBID")
+    if not pwd:
+        missing.append("B_ROUTE_PWD")
+    if not dev:
+        missing.append("DEVICE")
+
+    if missing:
+        missing_str = ", ".join(missing)
+        raise SystemExit(
+            f"必須環境変数が未設定です: {missing_str} (.env を確認してください)"
+        )
+
 def build_mqtt_client() -> mqtt.Client | None:
     """環境変数が揃っていれば MQTT クライアントを組み立てて接続する。"""
 
@@ -45,6 +61,7 @@ def build_mqtt_client() -> mqtt.Client | None:
 
 
 def main():
+    validate_required_env()
     mqtt_client = build_mqtt_client()
 
     # momongaでスマートメーターに接続
