@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import time
+from logging.handlers import RotatingFileHandler
 from urllib.parse import urlparse
 
 import momonga
@@ -9,11 +10,44 @@ import paho.mqtt.client as mqtt
 from dotenv import load_dotenv
 
 load_dotenv()
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
-)
-logger = logging.getLogger("homeiot_device_raspi")
+
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+LOG_DIR = os.path.join(BASE_DIR, "logs")
+LOG_PATH = os.path.join(LOG_DIR, "device.log")
+LOG_MAX_BYTES = 5 * 1024 * 1024
+LOG_BACKUP_COUNT = 3
+
+
+def setup_logging() -> logging.Logger:
+    logger = logging.getLogger("homeiot_device_raspi")
+    if logger.handlers:
+        return logger
+
+    logger.setLevel(logging.INFO)
+    logger.propagate = False
+
+    formatter = logging.Formatter(
+        "%(asctime)s %(levelname)s %(name)s: %(message)s"
+    )
+
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(formatter)
+    logger.addHandler(stream_handler)
+
+    try:
+        os.makedirs(LOG_DIR, exist_ok=True)
+        file_handler = RotatingFileHandler(
+            LOG_PATH, maxBytes=LOG_MAX_BYTES, backupCount=LOG_BACKUP_COUNT
+        )
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+    except OSError as exc:
+        logger.warning("ログファイルを作成できませんでした: %s", exc)
+
+    return logger
+
+
+logger = setup_logging()
 
 # ==== スマートメーター設定 ====
 rbid = os.getenv("RBID")
