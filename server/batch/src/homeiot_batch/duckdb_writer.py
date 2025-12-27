@@ -5,10 +5,13 @@ from __future__ import annotations
 from datetime import date
 from pathlib import Path
 from dataclasses import dataclass
+import logging
 
 import duckdb
 
 from .config import Config
+
+logger = logging.getLogger(__name__)
 
 DDL = """
 CREATE TABLE IF NOT EXISTS raw_meter_readings (
@@ -62,14 +65,34 @@ def _count_for_date(connection: duckdb.DuckDBPyConnection, target_date: date) ->
     ).fetchone()[0]
 
 
+def _integrity_check(connection: duckdb.DuckDBPyConnection) -> None:
+    try:
+        rows = connection.execute("PRAGMA integrity_check").fetchall()
+    except duckdb.CatalogException:
+        connection.execute("PRAGMA force_checkpoint")
+        logger.warning("DuckDB integrity_check is not supported; force_checkpoint only.")
+        return
+    if not rows:
+        raise RuntimeError("DuckDB integrity_check returned no rows")
+    if len(rows) == 1 and rows[0][0] == "ok":
+        return
+    details = ", ".join(str(row[0]) for row in rows)
+    raise RuntimeError(f"DuckDB integrity_check failed: {details}")
+
+
 @dataclass
 class DuckDBWriteResult:
     deleted_rows: int | None
     inserted_rows: int
 
 
-def write_archive(config: Config, target_date: date, partition_dir: Path) -> DuckDBWriteResult:
-    duckdb_path = Path(config.duckdb_path)
+def write_archive(
+    config: Config,
+    target_date: date,
+    partition_dir: Path,
+    duckdb_path: Path | None = None,
+) -> DuckDBWriteResult:
+    duckdb_path = duckdb_path or Path(config.duckdb_path)
     if not partition_dir.exists():
         raise FileNotFoundError(f"Parquetパーティションが見つかりません: {partition_dir}")
     duckdb_path.parent.mkdir(parents=True, exist_ok=True)
@@ -79,4 +102,6 @@ def write_archive(config: Config, target_date: date, partition_dir: Path) -> Duc
         _insert_from_parquet(connection, partition_dir)
         inserted = _count_for_date(connection, target_date)
         connection.commit()
+        connection.execute("CHECKPOINT")
+        _integrity_check(connection)
     return DuckDBWriteResult(deleted_rows=deleted, inserted_rows=inserted)

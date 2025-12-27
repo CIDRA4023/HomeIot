@@ -26,7 +26,9 @@ docker compose run --rm batch python -m homeiot_batch.run_archive
 実行内容:
 1. 前日(JST)の 00:00〜24:00 を UTC に変換して InfluxDB から取得
 2. Parquet を一時ディレクトリに書き出し、`dt=YYYY-MM-DD` へ原子的にリネーム
-3. DuckDB で対象日を DELETE し、Parquet から INSERT
+3. DuckDB は `home_energy.next.duckdb` に書き込み（対象日 DELETE → Parquet から INSERT）
+4. `PRAGMA integrity_check` と `CHECKPOINT` 実行後、`home_energy.duckdb` と原子的に入れ替え
+   - 既存DBは `home_energy.prev.duckdb` に退避
 
 ## 出力確認
 - Parquet: `ls data/parquet/raw_meter_readings/dt=YYYY-MM-DD`
