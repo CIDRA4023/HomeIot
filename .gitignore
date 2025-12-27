@@ -29,3 +29,8 @@ server/grafana/plugins/
 
 # Device logs
 device/logs/
+
+# Mosquitto TLS/auth artifacts
+server/config/mosquitto/passwords
+server/config/mosquitto/certs/**
+!server/config/mosquitto/certs/README.md
