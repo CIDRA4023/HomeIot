@@ -19,6 +19,7 @@ INFLUX_ORG = os.getenv("INFLUX_ORG")
 INFLUX_BUCKET = os.getenv("INFLUX_BUCKET")
 MQTT_BROKER_URL = os.getenv("MQTT_BROKER_URL", "mqtt://mqtt:1883")
 MQTT_TOPIC = os.getenv("MQTT_TOPIC", "home/power")
+MQTT_TLS_CA_CERT = os.getenv("MQTT_TLS_CA_CERT")
 
 app = FastAPI(title="Home IoT Server", version="0.2.0")
 
@@ -59,12 +60,21 @@ def _build_mqtt_client() -> mqtt.Client | None:
         return None
 
     host = parsed.hostname
-    port = parsed.port or 1883
+    if parsed.scheme in ("mqtts", "ssl", "tls"):
+        port = parsed.port or 8883
+    else:
+        port = parsed.port or 1883
 
     mqtt_client = mqtt.Client(protocol=mqtt.MQTTv5)
     mqtt_client.reconnect_delay_set(min_delay=1, max_delay=30)
     if parsed.username or parsed.password:
         mqtt_client.username_pw_set(parsed.username, parsed.password or None)
+
+    if parsed.scheme in ("mqtts", "ssl", "tls"):
+        tls_kwargs: dict[str, str] = {}
+        if MQTT_TLS_CA_CERT:
+            tls_kwargs["ca_certs"] = MQTT_TLS_CA_CERT
+        mqtt_client.tls_set(**tls_kwargs)
 
     def on_connect(client: mqtt.Client, userdata, flags, reason_code, properties=None):
         code = getattr(reason_code, "value", reason_code)

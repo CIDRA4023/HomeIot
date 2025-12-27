@@ -57,6 +57,7 @@ dev = os.getenv("DEVICE")
 # ==== MQTT設定 ====
 MQTT_BROKER_URL = os.getenv("MQTT_BROKER_URL")
 MQTT_TOPIC = os.getenv("MQTT_TOPIC", "home/power")
+MQTT_TLS_CA_CERT = os.getenv("MQTT_TLS_CA_CERT")
 
 
 def validate_required_env() -> None:
@@ -89,7 +90,10 @@ def build_mqtt_client() -> mqtt.Client | None:
         return None
 
     host = parsed.hostname
-    port = parsed.port or 1883
+    if parsed.scheme in ("mqtts", "ssl", "tls"):
+        port = parsed.port or 8883
+    else:
+        port = parsed.port or 1883
 
     client = mqtt.Client(
         protocol=mqtt.MQTTv5,
@@ -136,6 +140,12 @@ def build_mqtt_client() -> mqtt.Client | None:
 
     if parsed.username or parsed.password:
         client.username_pw_set(parsed.username, parsed.password or None)
+
+    if parsed.scheme in ("mqtts", "ssl", "tls"):
+        tls_kwargs: dict[str, str] = {}
+        if MQTT_TLS_CA_CERT:
+            tls_kwargs["ca_certs"] = MQTT_TLS_CA_CERT
+        client.tls_set(**tls_kwargs)
 
     client.on_connect = on_connect
     client.on_disconnect = on_disconnect

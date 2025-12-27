@@ -12,6 +12,7 @@ class DummyClient:
         self.reconnect_delays = None
         self.on_connect = None
         self.on_disconnect = None
+        self.tls_kwargs = None
 
     def username_pw_set(self, username, password=None):
         self.username = username
@@ -25,6 +26,9 @@ class DummyClient:
 
     def loop_start(self):
         self.loop_started = True
+
+    def tls_set(self, **kwargs):
+        self.tls_kwargs = kwargs
 
 
 def test_validate_required_env_missing(monkeypatch):
@@ -73,3 +77,15 @@ def test_build_mqtt_client_valid_url(monkeypatch):
     assert client.reconnect_delays == (1, 60)
     assert client.on_connect is not None
     assert client.on_disconnect is not None
+
+
+def test_build_mqtt_client_tls(monkeypatch):
+    monkeypatch.setattr(main.mqtt, "Client", DummyClient)
+    monkeypatch.setattr(main, "MQTT_BROKER_URL", "mqtts://user:pass@localhost")
+    monkeypatch.setattr(main, "MQTT_TLS_CA_CERT", "/tmp/ca.crt")
+
+    client = main.build_mqtt_client()
+
+    assert isinstance(client, DummyClient)
+    assert client.connect_args == ("localhost", 8883)
+    assert client.tls_kwargs == {"ca_certs": "/tmp/ca.crt"}
