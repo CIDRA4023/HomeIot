@@ -79,9 +79,9 @@ services:
         condition: service_started
     environment:
       - CLOUDFLARE_TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
-    command: tunnel --no-autoupdate --config /etc/cloudflared/config.yml run --token ${CLOUDFLARE_TUNNEL_TOKEN}
-    volumes:
-      - ./server/cloudflare/config.yml:/etc/cloudflared/config.yml:ro
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+
+
 
 volumes:
   influxdb-data:

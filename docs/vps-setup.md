@@ -30,17 +30,13 @@ MQTT_TOPIC=home/power
 - 外部公開は 8883 のみ（TLS 必須）
 - ホスト名/IP は証明書の SAN と一致させる（IP 直指定する場合は SAN に IP を入れる）
 
-## Cloudflare Tunnel の設定
-`server/cloudflare/config.yml` のホスト名を実際の FQDN に変更してください。
+## Cloudflare Tunnel の設定（トークン方式）
+トークン方式では Cloudflare 側の設定が優先されます。以下を Cloudflare Zero Trust で設定します。
 
-```yaml
-ingress:
-  - hostname: grafana.example.com
-    service: http://grafana:3000
-  - hostname: app.example.com
-    service: http://app:8000
-  - service: http_status:404
-```
+- Tunnels → 対象トンネル → Public Hostnames
+  - `grafana.example.com` → `http://grafana:3000`
+  - `app.example.com` → `http://app:8000`
+
 
 ## MQTT TLS 証明書の作成
 `server/config/mosquitto/certs/README.md` の手順で `ca.crt` / `server.crt` / `server.key` を作成します。
