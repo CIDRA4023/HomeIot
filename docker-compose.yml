@@ -6,6 +6,8 @@ services:
       - .env
     environment:
       INFLUX_URL: ${INFLUX_URL:-http://influxdb:8086}
+    volumes:
+      - ./server/config/mosquitto/certs/ca.crt:/etc/ssl/certs/homeiot-ca.crt:ro
     depends_on:
       influxdb:
         condition: service_healthy

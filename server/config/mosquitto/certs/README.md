@@ -11,11 +11,12 @@ openssl genrsa -out ca.key 4096
 openssl req -x509 -new -nodes -key ca.key -sha256 -days 3650 \
   -subj "/CN=HomeIoT CA" -out ca.crt
 
-# サーバ証明書
+# サーバ証明書（SAN 必須）
 openssl genrsa -out server.key 2048
-openssl req -new -key server.key -subj "/CN=mqtt.example.com" -out server.csr
+openssl req -new -key server.key -subj "/CN=mqtt.example.com" \
+  -addext "subjectAltName=DNS:mqtt.example.com" -out server.csr
 openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial \
-  -out server.crt -days 825 -sha256
+  -out server.crt -days 825 -sha256 -copy_extensions copy
 ```
 
 生成物:
@@ -24,3 +25,4 @@ openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial \
 
 注意:
 - `ca.key` と `server.key` は厳重に管理し、Git にはコミットしません。
+- IP 直指定で接続する場合は `subjectAltName=IP:<IP>` にして作り直してください。
