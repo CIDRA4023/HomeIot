@@ -4,6 +4,7 @@ import os
 import time
 from logging.handlers import RotatingFileHandler
 from urllib.parse import urlparse
+from urllib.request import urlopen
 
 import momonga
 import paho.mqtt.client as mqtt
@@ -58,6 +59,21 @@ dev = os.getenv("DEVICE")
 MQTT_BROKER_URL = os.getenv("MQTT_BROKER_URL")
 MQTT_TOPIC = os.getenv("MQTT_TOPIC", "home/power")
 MQTT_TLS_CA_CERT = os.getenv("MQTT_TLS_CA_CERT")
+UPTIME_KUMA_PUSH_URL = os.getenv("UPTIME_KUMA_PUSH_URL")
+
+
+def get_float_env(name: str, default: float) -> float:
+    raw_value = os.getenv(name)
+    if raw_value is None:
+        return default
+    try:
+        return float(raw_value)
+    except ValueError:
+        logger.warning("%s の値が不正です: %s (default=%s)", name, raw_value, default)
+        return default
+
+
+UPTIME_KUMA_PUSH_TIMEOUT = get_float_env("UPTIME_KUMA_PUSH_TIMEOUT", 5.0)
 
 
 def validate_required_env() -> None:
@@ -156,6 +172,14 @@ def build_mqtt_client() -> mqtt.Client | None:
     return client
 
 
+def push_uptime_kuma(url: str) -> None:
+    try:
+        with urlopen(url, timeout=UPTIME_KUMA_PUSH_TIMEOUT):
+            logger.debug("Uptime Kuma への push に成功しました。")
+    except Exception as exc:
+        logger.warning("Uptime Kuma への push に失敗しました: %s", exc)
+
+
 def main():
     validate_required_env()
     mqtt_client = build_mqtt_client()
@@ -182,7 +206,14 @@ def main():
                             "power_w": float(power),
                             "energy_wh_import": energy_import,
                         }
-                        mqtt_client.publish(MQTT_TOPIC, json.dumps(payload), qos=1)
+                        publish_result = mqtt_client.publish(
+                            MQTT_TOPIC, json.dumps(payload), qos=1
+                        )
+                        if (
+                            UPTIME_KUMA_PUSH_URL
+                            and publish_result.rc == mqtt.MQTT_ERR_SUCCESS
+                        ):
+                            push_uptime_kuma(UPTIME_KUMA_PUSH_URL)
 
                     # 30〜60秒くらいがオススメ
                     time.sleep(10)

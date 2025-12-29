@@ -69,6 +69,17 @@ services:
       - ./data/duckdb:/data/duckdb:ro
       - ./data/parquet:/data/parquet:ro
 
+  uptime_kuma:
+    image: louislam/uptime-kuma:1
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - TZ=${TZ:-Asia/Tokyo}
+      - NODE_EXTRA_CA_CERTS=/etc/ssl/certs/homeiot-ca.crt
+    volumes:
+      - uptime-kuma-data:/app/data
+
   cloudflared:
     image: cloudflare/cloudflared:latest
     restart: unless-stopped
@@ -89,3 +100,4 @@ volumes:
   mosquitto-data:
   mosquitto-config:
   grafana-data:
+  uptime-kuma-data:
