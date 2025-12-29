@@ -48,16 +48,56 @@ home-iot/
 ## Device (Raspberry Pi)
 
 ```
-cd device
+cd device/raspi-zero2
 cp .env.sample .env          # Bルートや InfluxDB の接続設定を書き換える
 uv sync                      # もしくは: pip install -r <generated requirements>
-uv run python main.py        # もしくは: python main.py
+uv run python -m homeiot_device_raspi.main
 ```
 
 ### 主な環境変数
 
 - `RBID`, `B_ROUTE_PWD`, `DEVICE`: momonga でスマートメーターへ接続するための B ルート情報
-- `INFLUX_URL`, `INFLUX_TOKEN`, `INFLUX_ORG`, `INFLUX_BUCKET`: 書き込み先の InfluxDB 設定
+- `MQTT_BROKER_URL`, `MQTT_TLS_CA_CERT`, `MQTT_TOPIC`: MQTT publish 先の設定
+
+### systemd で常駐させる
+
+1) `.env` を作成し、`uv sync` まで済ませた上で、systemd のユニットを追加します。
+
+```
+sudo tee /etc/systemd/system/homeiot-device.service >/dev/null <<'EOF'
+[Unit]
+Description=HomeIoT Raspberry Pi Device
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/home-iot/device/raspi-zero2
+EnvironmentFile=/home/pi/home-iot/device/raspi-zero2/.env
+Environment=PATH=/home/pi/.local/bin:/usr/local/bin:/usr/bin:/bin
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/home/pi/.local/bin/uv run python -m homeiot_device_raspi.main
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+EOF
+```
+
+2) サービスを有効化して起動します。
+
+```
+sudo systemctl daemon-reload
+sudo systemctl enable --now homeiot-device.service
+```
+
+- 停止: `sudo systemctl stop homeiot-device.service`
+- 自動起動も止める: `sudo systemctl disable homeiot-device.service`
+- ログ確認: `journalctl -u homeiot-device.service -f`
+- パスやユーザーは環境に合わせて変更してください（例: `WorkingDirectory`, `ExecStart`）。
 
 ## Server (VPS)
 
