@@ -34,6 +34,46 @@ docker compose run --rm batch python -m homeiot_batch.run_archive
 - Parquet: `ls data/parquet/raw_meter_readings/dt=YYYY-MM-DD`
 - DuckDB 件数例: `duckdb data/duckdb/home_energy.duckdb "SELECT COUNT(*) FROM raw_meter_readings;"` （手元に duckdb コマンドがある場合）
 
+## 定期実行（systemd timer）
+`/path/to/HomeIot` は実際のリポジトリパスに置き換えてください。
+
+`/etc/systemd/system/homeiot-batch.service`:
+```ini
+[Unit]
+Description=HomeIot batch archive
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/path/to/HomeIot
+ExecStart=/usr/bin/docker compose run --rm batch python -m homeiot_batch.run_archive
+```
+
+`/etc/systemd/system/homeiot-batch.timer`:
+```ini
+[Unit]
+Description=HomeIot batch archive timer
+
+[Timer]
+OnCalendar=*-*-* 00:10:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+```
+
+有効化:
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now homeiot-batch.timer
+```
+
+ログ確認:
+```bash
+sudo journalctl -u homeiot-batch.service -n 100 --no-pager
+```
+
 ## 冪等性
 - Parquet: 同一日付を再実行すると `dt=YYYY-MM-DD` を削除して再生成
 - DuckDB: 挿入前に対象日を DELETE するため重複しない
