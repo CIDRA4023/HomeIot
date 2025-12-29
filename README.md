@@ -58,6 +58,21 @@ uv run python -m homeiot_device_raspi.main
 
 - `RBID`, `B_ROUTE_PWD`, `DEVICE`: momonga でスマートメーターへ接続するための B ルート情報
 - `MQTT_BROKER_URL`, `MQTT_TLS_CA_CERT`, `MQTT_TOPIC`: MQTT publish 先の設定
+- `UPTIME_KUMA_PUSH_URL`, `UPTIME_KUMA_PUSH_TIMEOUT`: MQTT publish 成功時に Uptime Kuma へ push するための設定
+
+### Uptime Kuma Push 監視
+
+MQTT の publish 成功時に Uptime Kuma へ ping して、ラズパイ側の生存確認に使えます。
+
+1) サーバー側で Uptime Kuma を起動します。
+
+```
+docker compose up -d uptime_kuma
+```
+
+2) `http://<server>:3001` で Uptime Kuma を開き、Push 監視を作成します。
+3) 作成された Push URL を `device/raspi-zero2/.env` の `UPTIME_KUMA_PUSH_URL` に設定します。
+4) ラズパイのプロセスを起動すると、MQTT publish 成功時に Uptime Kuma に push します。
 
 ### systemd で常駐させる
 
