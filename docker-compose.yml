@@ -48,6 +48,31 @@ services:
     volumes:
       - ./server/config/mosquitto:/mosquitto/config:ro
 
+  node_exporter:
+    image: prom/node-exporter:latest
+    restart: unless-stopped
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+      - "--path.rootfs=/host"
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/host:ro
+
+  prometheus:
+    image: prom/prometheus:latest
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./server/config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      node_exporter:
+        condition: service_started
+
   grafana:
     image: grafana/grafana:latest-ubuntu
     restart: unless-stopped

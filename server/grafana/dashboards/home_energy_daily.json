@@ -15,7 +15,7 @@
         {
           "refId": "A",
           "format": "table",
-          "query": "SELECT CAST(ts_jst AS DATE) AS date_jst, MAX(energy_import_kwh) - MIN(energy_import_kwh) AS daily_energy_kwh\nFROM raw_meter_readings\nGROUP BY 1\nORDER BY 1"
+          "query": "SELECT CAST(ts_jst AS DATE) AS date_jst, MAX(energy_import_kwh) - MIN(energy_import_kwh) AS daily_energy_kwh\nFROM raw_meter_readings\nWHERE ts_jst BETWEEN $__timeFrom() AND $__timeTo()\nGROUP BY 1\nORDER BY 1"
         }
       ],
       "fieldConfig": {
