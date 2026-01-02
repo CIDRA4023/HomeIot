@@ -73,6 +73,30 @@ services:
       node_exporter:
         condition: service_started
 
+  loki:
+    image: grafana/loki:latest
+    restart: unless-stopped
+    command: -config.file=/etc/loki/loki.yaml
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./server/config/loki/loki.yaml:/etc/loki/loki.yaml:ro
+      - loki-data:/loki
+
+  alloy:
+    image: grafana/alloy:latest
+    restart: unless-stopped
+    command:
+      - "run"
+      - "/etc/alloy/alloy.hcl"
+    depends_on:
+      loki:
+        condition: service_started
+    volumes:
+      - ./server/config/alloy/alloy.hcl:/etc/alloy/alloy.hcl:ro
+      - /var/log:/var/log:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
   grafana:
     image: grafana/grafana:latest-ubuntu
     restart: unless-stopped
@@ -126,3 +150,4 @@ volumes:
   mosquitto-config:
   grafana-data:
   uptime-kuma-data:
+  loki-data:

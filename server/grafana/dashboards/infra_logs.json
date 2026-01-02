@@ -1,0 +1,48 @@
+{
+  "title": "Infra Logs",
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "30s",
+  "panels": [
+    {
+      "id": 1,
+      "type": "logs",
+      "title": "Mosquitto Auth Failures",
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 0},
+      "datasource": "Loki",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{container=\"mqtt\"} |~ \"not authorised|auth\""
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "logs",
+      "title": "Influx Write Errors (app)",
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 8},
+      "datasource": "Loki",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{container=\"app\"} |= \"Influx\" |= \"error\""
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "logs",
+      "title": "cloudflared Reconnects",
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 16},
+      "datasource": "Loki",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{container=\"cloudflared\"} |= \"reconnect\""
+        }
+      ]
+    }
+  ]
+}
