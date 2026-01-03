@@ -5,30 +5,58 @@ Raspberry Pi と VPS の両方を 1 リポジトリで管理するための最�
 ## アーキテクチャ
 
 ```mermaid
-flowchart LR
-  subgraph Device
-    RPI[Raspberry Pi Zero2\nhomeiot_device_raspi]
+flowchart TB
+  classDef db fill:#eef,stroke:#55f,stroke-width:1px
+  classDef svc fill:#efe,stroke:#5a5,stroke-width:1px
+  classDef dev fill:#fee,stroke:#f55,stroke-width:1px
+
+  subgraph Device["家庭内デバイス"]
+    RPI["Raspberry Pi Zero2<br/>Wi-SUN + Python"]:::dev
   end
-  subgraph Server
-    MQTT[MQTT Broker\nMosquitto]
-    GW[MQTT Gateway\nFastAPI]
-    Influx[InfluxDB\nhome_energy.power]
-    Batch[Batch Archive\nhomeiot_batch]
-    Parquet[Parquet\nraw_meter_readings/dt=YYYY-MM-DD]
-    DuckDB[DuckDB\nhome_energy.duckdb]
-    DBT[dbt Models]
-    Grafana[Grafana Dashboards]
+
+  subgraph HomeServer["家庭内サーバー（docker-compose）"]
+    MQTT["Mosquitto<br/>MQTT Broker"]:::svc
+    GW["MQTT Gateway<br/>Python"]:::svc
+    Influx[("InfluxDB<br/>bucket: home_energy")]:::db
+    Batch["Archive Batch<br/>Python + DuckDB"]:::svc
+    Parquet[("Parquet<br/>raw_meter_readings/dt=YYYY-MM-DD")]:::db
+    Duck[("DuckDB<br/>home_energy.duckdb")]:::db
+    DBT["dbt<br/>stg → mart"]:::svc
+
+    subgraph Observability["監視 / 運用"]
+      NodeExporter["node_exporter<br/>host metrics"]:::svc
+      Prometheus["Prometheus<br/>metrics store"]:::db
+      Loki["Loki<br/>log store"]:::db
+      Alloy["Grafana Alloy<br/>log collector"]:::svc
+      UptimeKuma["Uptime Kuma<br/>push monitor"]:::svc
+      Grafana["Grafana / BI"]:::svc
+    end
+
+    Cloudflared["Cloudflare Tunnel<br/>remote access"]:::svc
   end
-  RPI -- publish --> MQTT
-  MQTT -- subscribe --> GW
-  GW -- write --> Influx
-  Batch -- query (prev day JST) --> Influx
-  Batch -- write --> Parquet
-  Parquet -- load --> DuckDB
-  DBT -- build --> DuckDB
-  Grafana -- read --> Influx
-  Grafana -- read --> DuckDB
+
+  RPI -->|"MQTT publish<br/>10s interval"| MQTT
+  MQTT -->|"subscribe JSON"| GW
+  GW -->|"write points"| Influx
+  RPI -->|"Uptime Kuma push"| UptimeKuma
+
+  Influx -->|"query 前日分"| Batch
+  Batch -->|"append raw"| Parquet
+  Parquet -->|"load"| Duck
+  Duck -->|"transform"| DBT
+  DBT -->|"mart tables"| Duck
+
+  Influx -->|"リアルタイム"| Grafana
+  Duck -->|"履歴分析"| Grafana
+  NodeExporter -->|"scrape"| Prometheus
+  Prometheus -->|"metrics"| Grafana
+  Alloy -->|"collect logs"| Loki
+  Loki -->|"logs"| Grafana
+  Cloudflared -->|"tunnel"| Grafana
+  UptimeKuma -->|"monitor"| Influx
+  UptimeKuma -->|"monitor"| Cloudflared
 ```
+
 
 ```
 home-iot/
