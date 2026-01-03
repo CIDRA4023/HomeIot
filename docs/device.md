@@ -2,14 +2,14 @@
 
 ```
 cd device/raspi-zero2
-cp .env.sample .env          # Bルートや InfluxDB の接続設定を書き換える
-uv sync                      # もしくは: pip install -r <generated requirements>
+cp .env.sample .env          # Bルートや MQTT の接続設定を書き換える
+uv sync                      # uv が使えない場合は pip を使う
 uv run python -m homeiot_device_raspi.main
 ```
 
 ### 主な環境変数
 
-- `RBID`, `B_ROUTE_PWD`, `DEVICE`: momonga でスマートメーターへ接続するための B ルート情報
+- `RBID`, `B_ROUTE_PWD`, `DEVICE`: momonga でスマートメーターへ接続するための B ルート情報（`DEVICE` は環境で変わります）
 - `MQTT_BROKER_URL`, `MQTT_TLS_CA_CERT`, `MQTT_TOPIC`: MQTT publish 先の設定
 - `UPTIME_KUMA_PUSH_URL`, `UPTIME_KUMA_PUSH_TIMEOUT`: MQTT publish 成功時に Uptime Kuma へ push するための設定
 
@@ -53,16 +53,3 @@ sudo systemctl enable --now homeiot-device.service
 - 自動起動も止める: `sudo systemctl disable homeiot-device.service`
 - ログ確認: `journalctl -u homeiot-device.service -f`
 - パスやユーザーは環境に合わせて変更してください（例: `WorkingDirectory`, `ExecStart`）。
-
-## Server (VPS)
-
-```
-cd server
-cp .env.sample .env           # パスワードやポートを上書き
-docker compose up -d
-```
-
-- `app/` は独自の API コンテナを置く場所です（FastAPI の最小実装を同梱）。
-- `docker-compose.yml` はアプリと一緒に InfluxDB・MQTT ブローカーを公式イメージで起動します。
-
-任意の VPS 上で `docker compose logs -f` でログを確認しつつ、必要になったら DB バックアップ先やボリューム名を調整してください。
