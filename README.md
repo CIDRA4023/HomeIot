@@ -23,11 +23,26 @@ Raspberry Pi（デバイス）と VPS / 自宅サーバー（サーバー）の�
 ## Architecture
 
 ```mermaid
-%%{init: {'theme': 'dark'}}%%
+%%{init:{
+  "theme":"base",
+  "themeVariables":{
+    "background":"transparent",
+    "primaryTextColor":"#e6edf3",
+    "lineColor":"#e6edf3",
+    "fontSize":"14px",
+
+    "clusterBkg":"#0d1117",
+    "clusterBorder":"#30363d",
+    "titleColor":"#e6edf3",
+
+    "edgeLabelBackground":"#0d1117"
+  }
+}}%%
 flowchart TB
-  classDef db fill:#eef,stroke:#55f,stroke-width:1px
-  classDef svc fill:#efe,stroke:#5a5,stroke-width:1px
-  classDef dev fill:#fee,stroke:#f55,stroke-width:1px
+  %% 明るい塗りをやめて「暗い塗り + 白文字」にする
+  classDef db  fill:#0b2f4a,stroke:#58a6ff,stroke-width:1px,color:#e6edf3
+  classDef svc fill:#0f3d2e,stroke:#3fb950,stroke-width:1px,color:#e6edf3
+  classDef dev fill:#3a1d1d,stroke:#ff7b72,stroke-width:1px,color:#e6edf3
 
   subgraph Device["家庭内デバイス"]
     RPI["Raspberry Pi Zero2<br/>Wi-SUN + Python"]:::dev
