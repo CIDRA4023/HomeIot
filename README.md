@@ -84,16 +84,38 @@ Raspberry Pi 側（device）とサーバー側（server）を
 ```
 home-iot/
   README.md
+  AGENTS.md           # リポジトリ運用ガイドライン
+  docker-compose.yml  # HomeServer スタック起動用
+  data/               # ローカルデータ置き場
+  docs/               # ドキュメント
   device/
-    main.py            # ラズパイ用のエントリポイント
-    pyproject.toml     # uv や pip で使う依存定義
-    .env.sample        # momonga / InfluxDB の設定例
+    raspi-zero2/
+      pyproject.toml   # デバイス側依存定義
+      .env.sample      # Wi-SUN / MQTT / InfluxDB 設定例
+      src/
+        homeiot_device_raspi/
+          main.py      # ラズパイ用エントリポイント
   server/
-    docker-compose.yml # VPS 上で起動するスタック
-    app/
+    mqtt_gateway/
       Dockerfile
-      app.py           # API（FastAPI）サンプル
-    .env.sample        # InfluxDB / MQTT などの設定例
+      pyproject.toml   # Gateway 依存定義
+      src/
+        homeiot_mqtt_gateway/
+          main.py      # FastAPI エントリポイント
+    batch/
+      Dockerfile
+      pyproject.toml   # バッチ依存定義
+      src/
+        homeiot_batch/
+          run_archive.py # Influx -> Parquet 変換
+    grafana/
+      dashboards/      # ダッシュボード定義
+      provisioning/    # データソース/ダッシュボード設定
+    config/
+      mosquitto/       # MQTT ブローカー設定
+      prometheus/      # Prometheus 設定
+      loki/            # Loki 設定
+      alloy/           # Grafana Alloy 設定
 ```
 
 ---
@@ -127,11 +149,3 @@ home-iot/
 👉 詳細は [`docs/observability.md`](docs/observability.md)
 
 ---
-
-
-
-
-
-
-
-
