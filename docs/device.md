@@ -1,25 +1,37 @@
 ## Device (Raspberry Pi)
 
-```
+### Overview
+Raspberry Pi Zero2 でスマートメーターを読み取り、MQTT へ publish します。
+
+### Prerequisites
+- Python 3.12+ と uv を用意する
+- B ルート情報と MQTT 接続情報を用意する
+- 送信先 MQTT ブローカーの TLS 設定を準備する
+
+### Setup
+```bash
 cd device/raspi-zero2
-cp .env.sample .env          # Bルートや MQTT の接続設定を書き換える
-uv sync                      # uv が使えない場合は pip を使う
+cp .env.sample .env
+uv sync
+```
+
+### Configuration
+`.env` を編集して以下を設定します。
+
+- `RBID`, `B_ROUTE_PWD`, `DEVICE`: momonga でスマートメーターへ接続するための B ルート情報
+- `MQTT_BROKER_URL`, `MQTT_TLS_CA_CERT`, `MQTT_TOPIC`: MQTT publish 先の設定
+- `UPTIME_KUMA_PUSH_URL`, `UPTIME_KUMA_PUSH_TIMEOUT`: publish 成功時の監視連携（任意）
+
+### Run
+```bash
 uv run python -m homeiot_device_raspi.main
 ```
 
-### 主な環境変数
+### Run As Service (systemd)
+1) `.env` と `uv sync` が完了していることを確認し、systemd ユニットを作成します。
 
-- `RBID`, `B_ROUTE_PWD`, `DEVICE`: momonga でスマートメーターへ接続するための B ルート情報（`DEVICE` は環境で変わります）
-- `MQTT_BROKER_URL`, `MQTT_TLS_CA_CERT`, `MQTT_TOPIC`: MQTT publish 先の設定
-- `UPTIME_KUMA_PUSH_URL`, `UPTIME_KUMA_PUSH_TIMEOUT`: MQTT publish 成功時に Uptime Kuma へ push するための設定
-
-
-### systemd で常駐させる
-
-1) `.env` を作成し、`uv sync` まで済ませた上で、systemd のユニットを追加します。
-
-```
-sudo tee /etc/systemd/system/homeiot-device.service >/dev/null <<'EOF'
+```bash
+sudo tee /etc/systemd/system/homeiot-device.service >/dev/null <<'UNIT'
 [Unit]
 Description=HomeIoT Raspberry Pi Device
 After=network-online.target
@@ -39,17 +51,20 @@ RestartSec=10
 
 [Install]
 WantedBy=multi-user.target
-EOF
+UNIT
 ```
 
-2) サービスを有効化して起動します。
+2) 有効化して起動します。
 
-```
+```bash
 sudo systemctl daemon-reload
 sudo systemctl enable --now homeiot-device.service
 ```
 
+### Operations
 - 停止: `sudo systemctl stop homeiot-device.service`
-- 自動起動も止める: `sudo systemctl disable homeiot-device.service`
+- 自動起動停止: `sudo systemctl disable homeiot-device.service`
 - ログ確認: `journalctl -u homeiot-device.service -f`
+
+### Notes
 - パスやユーザーは環境に合わせて変更してください（例: `WorkingDirectory`, `ExecStart`）。
