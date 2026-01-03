@@ -23,6 +23,7 @@ Raspberry Pi（デバイス）と VPS / 自宅サーバー（サーバー）の�
 ## Architecture
 
 ```mermaid
+%%{init: {'theme': 'dark'}}%%
 flowchart TB
   classDef db fill:#eef,stroke:#55f,stroke-width:1px
   classDef svc fill:#efe,stroke:#5a5,stroke-width:1px
