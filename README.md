@@ -1,8 +1,26 @@
 # Home IoT
 
-Raspberry Pi と VPS の両方を 1 リポジトリで管理するための最小構成です。
+家庭内スマートメーター（Bルート）から電力データを取得し、
+MQTT・時系列 DB・分析用 DB を組み合わせて可視化・分析する
+**IoT × データ基盤の個人実験用リポジトリ**です。
 
-## アーキテクチャ
+Raspberry Pi（デバイス）と VPS / 自宅サーバー（サーバー）の両方を
+**1 リポジトリで管理**することを前提にしています。
+
+---
+
+## Features
+
+- Bルート対応スマートメーターからの電力データ取得（10 秒周期）
+- MQTT を介した疎結合なデバイス／サーバー構成
+- InfluxDB（短期）＋ DuckDB / Parquet（長期）の二層ストレージ構成
+- Grafana によるリアルタイム・履歴の統合可視化
+- Uptime Kuma によるデバイス死活監視
+- 観測・運用を含めた「家庭内データ基盤」の構築
+
+---
+
+## Architecture
 
 ```mermaid
 flowchart TB
@@ -57,6 +75,11 @@ flowchart TB
   UptimeKuma -->|"monitor"| Cloudflared
 ```
 
+---
+## Repository Structure
+
+Raspberry Pi 側（device）とサーバー側（server）を
+役割ごとに分離して管理しています。
 
 ```
 home-iot/
@@ -73,84 +96,42 @@ home-iot/
     .env.sample        # InfluxDB / MQTT などの設定例
 ```
 
-## Device (Raspberry Pi)
+---
 
-```
-cd device/raspi-zero2
-cp .env.sample .env          # Bルートや InfluxDB の接続設定を書き換える
-uv sync                      # もしくは: pip install -r <generated requirements>
-uv run python -m homeiot_device_raspi.main
-```
+## Quick Start（概要）
 
-### 主な環境変数
+### Device（Raspberry Pi）
 
-- `RBID`, `B_ROUTE_PWD`, `DEVICE`: momonga でスマートメーターへ接続するための B ルート情報
-- `MQTT_BROKER_URL`, `MQTT_TLS_CA_CERT`, `MQTT_TOPIC`: MQTT publish 先の設定
-- `UPTIME_KUMA_PUSH_URL`, `UPTIME_KUMA_PUSH_TIMEOUT`: MQTT publish 成功時に Uptime Kuma へ push するための設定
+* スマートメーターから電力データを取得し、MQTT に publish
+* systemd による常駐実行を想定
 
-### Uptime Kuma Push 監視
+👉 詳細手順は [`docs/device.md`](docs/device.md) を参照してください。
 
-MQTT の publish 成功時に Uptime Kuma へ ping して、ラズパイ側の生存確認に使えます。
+---
 
-1) サーバー側で Uptime Kuma を起動します。
+### Server（VPS / 自宅サーバー）
 
-```
-docker compose up -d uptime_kuma
-```
+* MQTT Broker / InfluxDB / Grafana などを docker-compose で起動
+* 観測・可視化・長期保存を担当
 
-2) `http://<server>:3001` で Uptime Kuma を開き、Push 監視を作成します。
-3) 作成された Push URL を `device/raspi-zero2/.env` の `UPTIME_KUMA_PUSH_URL` に設定します。
-4) ラズパイのプロセスを起動すると、MQTT publish 成功時に Uptime Kuma に push します。
+👉 詳細手順は [`docs/server.md`](docs/server.md) を参照してください。
 
-### systemd で常駐させる
+---
 
-1) `.env` を作成し、`uv sync` まで済ませた上で、systemd のユニットを追加します。
+### Observability
 
-```
-sudo tee /etc/systemd/system/homeiot-device.service >/dev/null <<'EOF'
-[Unit]
-Description=HomeIoT Raspberry Pi Device
-After=network-online.target
-Wants=network-online.target
+* Node Exporter + Prometheus によるホスト監視
+* Loki + Alloy によるログ収集
+* Uptime Kuma によるデバイス生存監視
 
-[Service]
-Type=simple
-User=pi
-Group=pi
-WorkingDirectory=/home/pi/home-iot/device/raspi-zero2
-EnvironmentFile=/home/pi/home-iot/device/raspi-zero2/.env
-Environment=PATH=/home/pi/.local/bin:/usr/local/bin:/usr/bin:/bin
-Environment=PYTHONUNBUFFERED=1
-ExecStart=/home/pi/.local/bin/uv run python -m homeiot_device_raspi.main
-Restart=always
-RestartSec=10
+👉 詳細は [`docs/observability.md`](docs/observability.md)
 
-[Install]
-WantedBy=multi-user.target
-EOF
-```
+---
 
-2) サービスを有効化して起動します。
 
-```
-sudo systemctl daemon-reload
-sudo systemctl enable --now homeiot-device.service
-```
 
-- 停止: `sudo systemctl stop homeiot-device.service`
-- 自動起動も止める: `sudo systemctl disable homeiot-device.service`
-- ログ確認: `journalctl -u homeiot-device.service -f`
-- パスやユーザーは環境に合わせて変更してください（例: `WorkingDirectory`, `ExecStart`）。
 
-## Server (VPS)
 
-```
-cd server
-cp .env.sample .env           # パスワードやポートを上書き
-docker compose up -d
-```
 
-- `app/` は独自の API コンテナを置く場所です（FastAPI の最小実装を同梱）。
-- `docker-compose.yml` はアプリと一緒に InfluxDB・MQTT ブローカーを公式イメージで起動します。
 
-任意の VPS 上で `docker compose logs -f` でログを確認しつつ、必要になったら DB バックアップ先やボリューム名を調整してください。
+
