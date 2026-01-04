@@ -6,7 +6,7 @@ import logging
 import sys
 import os
 import shutil
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 from .config import Config
@@ -73,7 +73,13 @@ def main() -> None:
     config = Config.load()
 
     try:
-        target_date, start_utc, end_utc = calculate_target_window(config)
+        target_date_env = os.environ.get("TARGET_DATE")
+        target_date: date | None = None
+        if target_date_env:
+            target_date = date.fromisoformat(target_date_env)
+        target_date, start_utc, end_utc = calculate_target_window(
+            config, target_date=target_date
+        )
         logger.info("ターゲット日 (JST): %s / 期間UTC: %s 〜 %s", target_date, start_utc, end_utc)
 
         points = fetch_points(config, start_utc, end_utc)

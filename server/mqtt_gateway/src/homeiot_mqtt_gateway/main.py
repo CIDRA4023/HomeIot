@@ -27,8 +27,8 @@ app = FastAPI(title="Home IoT Server", version="0.2.0")
 class PowerReading(BaseModel):
     meter: str = Field(description="Logical meter name, e.g. 'home'")
     power_w: float = Field(description="Instantaneous power in watts")
-    energy_wh_import: Optional[float] = Field(
-        default=None, description="Cumulative imported energy in Wh"
+    energy_import_kwh: Optional[float] = Field(
+        default=None, description="Cumulative imported energy in kWh"
     )
     measured_at: Optional[datetime] = Field(
         default=None, description="UTC timestamp supplied by the device"
@@ -45,8 +45,8 @@ def _write_to_influx(reading: PowerReading) -> None:
         .tag("meter", reading.meter)
         .field("power_w", float(reading.power_w))
     )
-    if reading.energy_wh_import is not None:
-        point.field("energy_wh_import", float(reading.energy_wh_import))
+    if reading.energy_import_kwh is not None:
+        point.field("energy_import_kwh", float(reading.energy_import_kwh))
     if reading.measured_at:
         point.time(reading.measured_at)
 

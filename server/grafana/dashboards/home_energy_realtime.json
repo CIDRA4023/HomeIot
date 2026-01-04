@@ -12,6 +12,12 @@
         "uid": null,
         "name": "InfluxDB"
       },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 10
+      },
       "targets": [
         {
           "refId": "A",
@@ -41,10 +47,16 @@
         "uid": null,
         "name": "InfluxDB"
       },
+      "gridPos": {
+        "x": 0,
+        "y": 10,
+        "w": 24,
+        "h": 10
+      },
       "targets": [
         {
           "refId": "A",
-          "query": "from(bucket: v.defaultBucket)\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"smartmeter_power\" and r[\"_field\"] == \"energy_wh_import\")\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> map(fn: (r) => ({ r with _value: r._value / 1000.0 }))\n  |> yield(name: \"last\")",
+          "query": "from(bucket: v.defaultBucket)\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"smartmeter_power\" and r[\"_field\"] == \"energy_import_kwh\")\n  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)\n  |> yield(name: \"last\")",
           "queryType": "flux"
         }
       ],
@@ -57,6 +69,90 @@
       "fieldConfig": {
         "defaults": {
           "unit": "kWh"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 3,
+      "type": "gauge",
+      "title": "Energy Today (kWh)",
+      "datasource": {
+        "type": "influxdb",
+        "uid": null,
+        "name": "InfluxDB"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 20,
+        "w": 12,
+        "h": 8
+      },
+      "timeFrom": "now/d",
+      "timeTo": "now",
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: v.defaultBucket)\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"smartmeter_power\" and r[\"_field\"] == \"energy_import_kwh\")\n  |> difference(nonNegative: true)\n  |> sum()\n  |> yield(name: \"sum\")",
+          "queryType": "flux"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "kWh",
+          "min": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 4,
+      "type": "gauge",
+      "title": "Instant Power Now (W)",
+      "datasource": {
+        "type": "influxdb",
+        "uid": null,
+        "name": "InfluxDB"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 20,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: v.defaultBucket)\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"smartmeter_power\" and r[\"_field\"] == \"power_w\")\n  |> last()\n  |> yield(name: \"last\")",
+          "queryType": "flux"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "watt",
+          "min": 0
         },
         "overrides": []
       }

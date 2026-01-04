@@ -32,11 +32,7 @@ def transform_point(
         power_value = point.get("instant_power_w")
     instant_power_w = float(power_value or 0.0)
 
-    energy_import_wh = point.get("energy_wh_import")
-    if energy_import_wh is not None:
-        energy_import_kwh = float(energy_import_wh) / 1000.0
-    else:
-        energy_import_kwh = float(point.get("energy_import_kwh") or 0.0)
+    energy_import_kwh = float(point.get("energy_import_kwh") or 0.0)
     energy_export_kwh = float(point.get("energy_export_kwh") or 0.0)
     return (
         ts_utc,

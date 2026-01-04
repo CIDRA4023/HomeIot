@@ -204,7 +204,7 @@ def main():
                         payload = {
                             "meter": "home",
                             "power_w": float(power),
-                            "energy_wh_import": energy_import,
+                            "energy_import_kwh": energy_import,
                         }
                         publish_result = mqtt_client.publish(
                             MQTT_TOPIC, json.dumps(payload), qos=1
